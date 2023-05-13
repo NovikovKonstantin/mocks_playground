@@ -2,50 +2,62 @@ package service
 
 import "errors"
 
-type Service struct {
-	r Repository
-	v Validator
+type Number interface {
+	int64 | float64
 }
 
-func NewService(r Repository, v Validator) *Service {
-	return &Service{
+type Service[T Number] struct {
+	r Repository
+	v Validator[T]
+}
+
+func NewService[T Number](r Repository, v Validator[T]) *Service[T] {
+	return &Service[T]{
 		r: r,
 		v: v,
 	}
 }
 
-func (s *Service) GetList() ([]int64, error) {
-	values, err := s.r.GetList()
+// GetByMap method gets the map, extracts keys (in random order), and transmits them to the repository.
+// Method useful to check the way of the mock library to react on data in random order.
+func (s *Service[T]) GetByMap(mKeys map[string]struct{}) ([]int64, error) {
+	if len(mKeys) == 0 {
+		return nil, nil
+	}
+
+	keys := make([]string, 0, len(mKeys))
+	for key := range mKeys {
+		keys = append(keys, key)
+	}
+
+	return s.r.Get(keys)
+}
+
+// Store method tries to store data in the repository.
+// It contains multiple calls of the Check method, so it can be used to check how the mock library reacts to it.
+func (s *Service[T]) Store(values []int64) ([]string, error) {
+	for _, value := range values {
+		ok, err := s.v.Check(value)
+		switch {
+		case err != nil:
+			return nil, err
+		case !ok:
+			return nil, errors.New("value isn't valid")
+		}
+	}
+
+	keys, err := s.r.Store(values)
 	if err != nil {
 		return nil, err
 	}
 
-	return values, nil
+	return keys, nil
 }
 
-func (s *Service) GetByKey(key string) (int64, error) {
-	value, err := s.r.GetByKey(key)
-	if err != nil {
-		return 0, err
-	}
-
-	return value, nil
+func (s *Service[T]) ValidateAny(value T) (bool, error) {
+	return s.v.CheckGeneric(value)
 }
 
-func (s *Service) Store(value int64) (string, error) {
-	ok, err := s.v.Check(value)
-	if err != nil {
-		return "", err
-	}
-
-	if !ok {
-		return "", errors.New("value is not valid")
-	}
-
-	key, err := s.r.Store(value)
-	if err != nil {
-		return "", err
-	}
-
-	return key, nil
+func (s *Service[T]) ValidateAnyBatch(values []T) (bool, error) {
+	return s.v.CheckGenerics(values)
 }

@@ -1,6 +1,3 @@
-# Dummy makefile
-GOBIN=bin
-
 all: generate test
 
 dep:
@@ -8,7 +5,8 @@ dep:
 	go install github.com/matryer/moq@latest
 
 generate:
-	echo 'TODO: generate mocks'
+	@echo 'Generate mocks'
+	go generate ./...
 
 test:
 	echo 'TODO: run tests'

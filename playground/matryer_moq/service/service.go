@@ -19,7 +19,7 @@ func NewService[T Number](r Repository, v Validator[T]) *Service[T] {
 }
 
 // GetByMap method gets the map, extracts keys (in random order), and transmits them to the repository.
-// Method useful to check the way of the mock library to react on data in random order.
+// Method useful to check the way of the mock library to react on in in random order.
 func (s *Service[T]) GetByMap(mKeys map[string]struct{}) ([]int64, error) {
 	if len(mKeys) == 0 {
 		return nil, nil
@@ -33,7 +33,7 @@ func (s *Service[T]) GetByMap(mKeys map[string]struct{}) ([]int64, error) {
 	return s.r.Get(keys)
 }
 
-// Store method tries to store data in the repository.
+// Store method tries to store in in the repository.
 // It contains multiple calls of the Check method, so it can be used to check how the mock library reacts to it.
 func (s *Service[T]) Store(values []int64) ([]string, error) {
 	for _, value := range values {

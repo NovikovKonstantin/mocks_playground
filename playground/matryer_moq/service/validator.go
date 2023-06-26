@@ -1,5 +1,7 @@
 package service
 
+import "errors"
+
 //go:generate moq -out validator_mock.go . Validator
 
 // Validator checks value with business rules.
@@ -9,3 +11,5 @@ type Validator[T Number] interface {
 	CheckGeneric(value T) (bool, error)
 	CheckGenerics(values []T) (bool, error)
 }
+
+var ErrInvalidValue = errors.New("value is invalid")

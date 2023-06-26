@@ -113,3 +113,104 @@ func TestService_GetByMap(t *testing.T) {
 		})
 	}
 }
+
+func TestService_Store(t *testing.T) {
+	type out struct {
+		keys []string
+		err  error
+	}
+
+	tt := []struct {
+		name   string
+		in     []int64
+		mocks  mocks
+		assert func(out, mocks)
+	}{
+		{
+			name: "empty slice",
+			in:   nil,
+			mocks: mocks{
+				r: &RepositoryMock{},
+				v: &ValidatorMock[int64]{},
+			},
+			assert: func(o out, m mocks) {
+				assert.NoError(t, o.err)
+				assert.Empty(t, o.keys)
+			},
+		},
+		{
+			name: "filled with correct values",
+			in:   []int64{1, 2, 3, 4, 5},
+			mocks: mocks{
+				r: &RepositoryMock{
+					StoreFunc: func(values []int64) ([]string, error) {
+						expected := []int64{1, 2, 3, 4, 5}
+						assert.Equal(t, expected, values)
+						return []string{"1", "2", "3", "4", "5"}, nil
+					},
+				},
+				v: &ValidatorMock[int64]{
+					CheckFunc: func(value int64) (bool, error) {
+						return true, nil
+					},
+				},
+			},
+			assert: func(out out, m mocks) {
+				assert.NoError(t, out.err)
+				assert.Len(t, m.r.StoreCalls(), 1)
+				assert.Len(t, m.v.CheckCalls(), 5)
+				assert.Equal(t, []string{"1", "2", "3", "4", "5"}, out.keys)
+			},
+		},
+		{
+			name: "filled with correct and invalid values",
+			in:   []int64{1, 2, 3, 4, 5},
+			mocks: mocks{
+				r: &RepositoryMock{},
+				v: &ValidatorMock[int64]{
+					CheckFunc: func() func(value int64) (bool, error) {
+						values := []int64{1, 2, 3}
+						i := -1 // Call's index. It's useful to start from -1 and increase it below.
+
+						return func(value int64) (bool, error) {
+							i++
+
+							assert.Equal(t, values[i], value)
+
+							switch i {
+							case 2:
+								return false, ErrInvalidValue
+							default:
+								return true, nil
+							}
+						}
+					}(),
+				},
+			},
+			assert: func(out out, m mocks) {
+				assert.EqualError(t, out.err, ErrInvalidValue.Error())
+				assert.Len(t, m.r.StoreCalls(), 0)
+				assert.Len(t, m.v.CheckCalls(), 3)
+				assert.Empty(t, out.keys)
+			},
+		},
+	}
+
+	for _, tt := range tt {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewService[int64](tt.mocks.r, tt.mocks.v)
+
+			keys, err := s.Store(tt.in)
+
+			tt.assert(
+				out{
+					keys: keys,
+					err:  err,
+				},
+				tt.mocks,
+			)
+		})
+	}
+}

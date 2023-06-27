@@ -1,5 +1,7 @@
 package service
 
+//go:generate mockery --name Validator
+
 // Validator checks value with business rules.
 // It contains generics, so you can check the mock library's feature of mocking generics.
 type Validator[T Number] interface {

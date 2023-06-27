@@ -1,12 +1,12 @@
-# Dummy makefile
-
 all: generate test
 
 dep:
-	echo 'TODO: install dependencies'
+	@echo 'Install dependencies'
+	go get github.com/vektra/mockery/v2
 
 generate:
-	echo 'TODO: generate mocks'
+	@echo 'Generate mocks'
+	go generate ./...
 
 test:
-	echo 'TODO: run tests'
+	go test ./...

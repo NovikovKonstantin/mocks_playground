@@ -214,3 +214,105 @@ func TestService_Store(t *testing.T) {
 		})
 	}
 }
+
+func TestService_CheckGeneric(t *testing.T) {
+	type out struct {
+		result bool
+		err    error
+	}
+
+	tt := []struct {
+		name   string
+		in     int64
+		mocks  mocks
+		assert func(out, mocks)
+	}{
+		{
+			name: "success",
+			in:   5,
+			mocks: mocks{
+				v: &ValidatorMock[int64]{
+					CheckGenericFunc: func(value int64) (bool, error) {
+						assert.Equal(t, int64(5), value)
+
+						return true, nil
+					},
+				},
+			},
+			assert: func(o out, m mocks) {
+				assert.NoError(t, o.err)
+				assert.True(t, o.result)
+
+				assert.Len(t, m.v.CheckGenericCalls(), 1)
+			},
+		},
+	}
+
+	for _, tt := range tt {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {})
+		s := NewService[int64](tt.mocks.r, tt.mocks.v)
+
+		res, err := s.ValidateAny(tt.in)
+
+		tt.assert(
+			out{
+				result: res,
+				err:    err,
+			},
+			tt.mocks,
+		)
+	}
+}
+
+func TestService_CheckGenerics(t *testing.T) {
+	type out struct {
+		result bool
+		err    error
+	}
+
+	tt := []struct {
+		name   string
+		in     []int64
+		mocks  mocks
+		assert func(out, mocks)
+	}{
+		{
+			name: "success",
+			in:   []int64{1, 2, 3, 4},
+			mocks: mocks{
+				v: &ValidatorMock[int64]{
+					CheckGenericsFunc: func(values []int64) (bool, error) {
+						assert.Equal(t, []int64{1, 2, 3, 4}, values)
+
+						return true, nil
+					},
+				},
+			},
+			assert: func(o out, m mocks) {
+				assert.NoError(t, o.err)
+				assert.True(t, o.result)
+
+				assert.Len(t, m.v.CheckGenericsCalls(), 1)
+			},
+		},
+	}
+
+	for _, tt := range tt {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {})
+		s := NewService[int64](tt.mocks.r, tt.mocks.v)
+
+		res, err := s.ValidateAnyBatch(tt.in)
+
+		tt.assert(
+			out{
+				result: res,
+				err:    err,
+			},
+			tt.mocks,
+		)
+	}
+}

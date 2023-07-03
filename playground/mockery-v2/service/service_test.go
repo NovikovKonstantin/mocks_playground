@@ -44,7 +44,7 @@ func TestService_GetByMap(t *testing.T) {
 			},
 		},
 		{
-			name: "filled map",
+			name: "matched by return func",
 			in: map[string]struct{}{
 				"one":   {},
 				"two":   {},
@@ -74,6 +74,46 @@ func TestService_GetByMap(t *testing.T) {
 			},
 		},
 		{
+			name: "use matched by func",
+			in: map[string]struct{}{
+				"one":   {},
+				"two":   {},
+				"three": {},
+				"four":  {},
+				"five":  {},
+			},
+			m: newMocks(t),
+			setup: func(m m) {
+				m.r.EXPECT().
+					Get(mock.MatchedBy(func(keys []string) bool {
+						// Simple matcher function, which compares input slice of string with expected slice without order.
+						// Also can be implemented by .On function and assert.ElementsMatch, but it won't be a matcher function.
+						expected := map[string]struct{}{
+							"one":   {},
+							"two":   {},
+							"three": {},
+							"four":  {},
+							"five":  {},
+						}
+
+						if len(keys) != len(expected) {
+							return false
+						}
+
+						for _, key := range keys {
+							delete(expected, key)
+						}
+
+						return len(expected) == 0
+					})).
+					Return([]int64{1, 2, 3, 4, 5}, nil)
+			},
+			assert: func(out out) {
+				assert.NoError(t, out.err)
+				assert.Equal(t, out.values, []int64{1, 2, 3, 4, 5})
+			},
+		},
+		{
 			name: "error",
 			in: map[string]struct{}{
 				"one":   {},
@@ -84,6 +124,8 @@ func TestService_GetByMap(t *testing.T) {
 			},
 			m: newMocks(t),
 			setup: func(m m) {
+				// Send a type in a string. No consts for primitives, make your own consts or type string everytime.
+				// No methods as mock.String().
 				m.r.EXPECT().Get(mock.AnythingOfType("[]string")).Return(nil, errors.New("my error"))
 			},
 			assert: func(out out) {

@@ -186,3 +186,93 @@ func TestService_Store(t *testing.T) {
 		})
 	}
 }
+
+func TestService_ValidateAny(t *testing.T) {
+	type out struct {
+		ok  bool
+		err error
+	}
+
+	tests := []struct {
+		name   string
+		m      m
+		in     int64
+		setup  func(m)
+		assert func(out)
+	}{
+		{
+			name: "success",
+			m:    newMocks(t),
+			in:   1,
+			setup: func(m m) {
+				m.v.EXPECT().CheckGeneric(int64(1)).Return(true, nil)
+			},
+			assert: func(o out) {
+				assert.NoError(t, o.err)
+				assert.True(t, o.ok)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(tt.m)
+
+			s := service.NewService[int64](tt.m.r, tt.m.v)
+
+			ok, err := s.ValidateAny(tt.in)
+
+			tt.assert(out{
+				ok:  ok,
+				err: err,
+			})
+		})
+	}
+}
+
+func TestService_ValidateAnyBatch(t *testing.T) {
+	type out struct {
+		ok  bool
+		err error
+	}
+
+	tests := []struct {
+		name   string
+		m      m
+		in     []int64
+		setup  func(m)
+		assert func(out)
+	}{
+		{
+			name: "success",
+			m:    newMocks(t),
+			in:   []int64{1, 2, 3, 4, 5},
+			setup: func(m m) {
+				m.v.EXPECT().CheckGenerics([]int64{1, 2, 3, 4, 5}).Return(true, nil)
+			},
+			assert: func(o out) {
+				assert.NoError(t, o.err)
+				assert.True(t, o.ok)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(tt.m)
+
+			s := service.NewService[int64](tt.m.r, tt.m.v)
+
+			ok, err := s.ValidateAnyBatch(tt.in)
+
+			tt.assert(out{
+				ok:  ok,
+				err: err,
+			})
+		})
+	}
+}

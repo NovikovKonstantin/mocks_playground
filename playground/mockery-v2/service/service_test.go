@@ -110,3 +110,79 @@ func TestService_GetByMap(t *testing.T) {
 		})
 	}
 }
+
+func TestService_Store(t *testing.T) {
+	type out struct {
+		keys []string
+		err  error
+	}
+
+	tests := []struct {
+		name   string
+		m      m
+		in     []int64
+		setup  func(m)
+		assert func(out)
+	}{
+		{
+			name:  "zero values",
+			in:    nil,
+			m:     newMocks(t),
+			setup: func(m m) {},
+			assert: func(o out) {
+				assert.NoError(t, o.err)
+				assert.Empty(t, o.keys)
+			},
+		},
+		{
+			name: "check type only, not value",
+			in:   []int64{1, 2, 3, 4, 5},
+			m:    newMocks(t),
+			setup: func(m m) {
+				m.v.EXPECT().
+					Check(mock.AnythingOfType("int64")). // Check type only, not the value. Bad unit test, we'll pass random values as expected ones.
+					Return(true, nil).
+					Times(5) // Specify count of calls. Very useful.
+				m.r.EXPECT().Store([]int64{1, 2, 3, 4, 5}).Return([]string{"one", "two", "three", "four", "five"}, nil)
+			},
+			assert: func(o out) {
+				assert.NoError(t, o.err)
+				assert.Equal(t, o.keys, []string{"one", "two", "three", "four", "five"})
+			},
+		},
+		{
+			name: "check values properly",
+			in:   []int64{1, 2, 3, 4, 5},
+			m:    newMocks(t),
+			setup: func(m m) {
+				// Register EXPECT for every entry in the input.
+				for _, value := range []int64{1, 2, 3, 4, 5} {
+					m.v.EXPECT().Check(value).Return(true, nil)
+				}
+
+				m.r.EXPECT().Store([]int64{1, 2, 3, 4, 5}).Return([]string{"one", "two", "three", "four", "five"}, nil)
+			},
+			assert: func(o out) {
+				assert.NoError(t, o.err)
+				assert.Equal(t, o.keys, []string{"one", "two", "three", "four", "five"})
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			tt.setup(tt.m)
+
+			s := service.NewService[int64](tt.m.r, tt.m.v)
+
+			keys, err := s.Store(tt.in)
+
+			tt.assert(out{
+				keys: keys,
+				err:  err,
+			})
+		})
+	}
+}

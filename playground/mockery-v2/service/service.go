@@ -36,6 +36,10 @@ func (s *Service[T]) GetByMap(mKeys map[string]struct{}) ([]int64, error) {
 // Store method tries to store data in the repository.
 // It contains multiple calls of the Check method, so it can be used to check how the mock library reacts to it.
 func (s *Service[T]) Store(values []int64) ([]string, error) {
+	if len(values) == 0 {
+		return nil, nil
+	}
+
 	for _, value := range values {
 		ok, err := s.v.Check(value)
 		switch {

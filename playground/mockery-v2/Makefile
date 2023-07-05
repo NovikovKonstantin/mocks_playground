@@ -1,5 +1,9 @@
 all: generate test
 
+fmt:
+	@echo 'Run goimports'
+	find . -name "*.go" -exec goimports -w {} \;
+
 dep:
 	@echo 'Install dependencies'
 	go get github.com/vektra/mockery/v2

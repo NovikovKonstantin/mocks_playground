@@ -2,6 +2,10 @@
 
 all: generate test
 
+fmt:
+	@echo 'Run goimports'
+	find . -name "*.go" -exec goimports -w {} \;
+
 dep:
 	echo 'TODO: install dependencies'
 

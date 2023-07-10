@@ -209,6 +209,32 @@ func TestService_Store(t *testing.T) {
 				assert.Equal(t, o.keys, []string{"one", "two", "three", "four", "five"})
 			},
 		},
+		{
+			name: "valid and invalid values are given",
+			in:   []int64{1, 2, 3, 4, 5},
+			m:    newMocks(t),
+			setup: func(m m) {
+				// Use On-semantics to write Return function.
+				m.v.On("Check", mock.AnythingOfType("int64")).Return(
+					func(value int64) (bool, error) {
+						switch value {
+						case 1, 2:
+							return true, nil
+						case 3:
+							return false, nil
+						default:
+							assert.FailNow(t, "unexpected value")
+							return false, nil
+						}
+					},
+				)
+			},
+			assert: func(o out) {
+				assert.Error(t, o.err)
+				assert.EqualError(t, o.err, "value isn't valid")
+				assert.Empty(t, o.keys)
+			},
+		},
 	}
 
 	for _, tt := range tests {

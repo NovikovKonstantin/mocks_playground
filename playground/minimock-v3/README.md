@@ -1,1 +1,1 @@
-[Library](https://link-to-the-library) sandbox
+[gojuno/minimock](https://github.com/gojuno/minimock) sandbox

@@ -1,5 +1,3 @@
-# Dummy makefile
-
 all: generate test
 
 fmt:

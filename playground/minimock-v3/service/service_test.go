@@ -253,3 +253,49 @@ func TestService_ValidateAny(t *testing.T) {
 		})
 	}
 }
+
+func TestService_ValidateAnyBatch(t *testing.T) {
+	type out struct {
+		ok  bool
+		err error
+	}
+
+	tests := []struct {
+		name   string
+		in     []int64
+		setup  func(*mocks[int64])
+		assert func(out)
+	}{
+		{
+			name: "success",
+			in:   []int64{1, 2, 3, 4, 5},
+			setup: func(m *mocks[int64]) {
+				m.v.CheckGenericsMock.Expect([]int64{1, 2, 3, 4, 5}).Return(true, nil)
+			},
+			assert: func(o out) {
+				assert.NoError(t, o.err)
+				assert.True(t, o.ok)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+
+		t.Run(tt.name, func(t *testing.T) {
+			m := newMocks(t)
+			defer m.Finish()
+
+			tt.setup(m)
+
+			s := NewService[int64](m.r, m.v)
+
+			ok, err := s.v.CheckGenerics(tt.in)
+
+			tt.assert(out{
+				ok:  ok,
+				err: err,
+			})
+		})
+	}
+}

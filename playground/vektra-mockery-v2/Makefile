@@ -6,7 +6,7 @@ fmt:
 
 dep:
 	@echo 'Install dependencies'
-	go install github.com/matryer/moq@latest
+	go get github.com/vektra/mockery/v2@v2.31.1
 
 generate:
 	@echo 'Generate mocks'

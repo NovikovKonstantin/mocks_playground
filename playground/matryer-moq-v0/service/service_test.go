@@ -171,15 +171,14 @@ func TestService_Store(t *testing.T) {
 				v: &ValidatorMock[int64]{
 					CheckFunc: func() func(value int64) (bool, error) {
 						values := []int64{1, 2, 3}
-						i := -1 // Call's index. It's useful to start from -1 and increase it below.
+						i := 0 // call's index
 
 						return func(value int64) (bool, error) {
 							i++
-
-							assert.Equal(t, values[i], value)
+							assert.Equal(t, values[i-1], value)
 
 							switch i {
-							case 2:
+							case 3:
 								return false, ErrInvalidValue
 							default:
 								return true, nil
@@ -216,7 +215,7 @@ func TestService_Store(t *testing.T) {
 	}
 }
 
-func TestService_CheckGeneric(t *testing.T) {
+func TestService_ValidateAny(t *testing.T) {
 	type out struct {
 		result bool
 		err    error
@@ -267,7 +266,7 @@ func TestService_CheckGeneric(t *testing.T) {
 	}
 }
 
-func TestService_CheckGenerics(t *testing.T) {
+func TestService_ValidateAnyBatch(t *testing.T) {
 	type out struct {
 		result bool
 		err    error
